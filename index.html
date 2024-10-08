@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+</head>
+<body>
+    <h1>WebSocket Chat</h1>
+    
+    <!-- Input field for the message -->
+    <input id="messageInput" type="text" placeholder="Enter your message" />
+    <button onclick="sendMessage()">Send</button>
+
+    <!-- Display messages -->
+    <ul id="messages"></ul>
+
+    <script>
+        // Establish WebSocket connection to the FastAPI WebSocket endpoint
+        const ws = new WebSocket("ws://localhost:8000/ws/chat");
+
+        // When a message is received from the server, display it
+        ws.onmessage = function(event) {
+            const messages = document.getElementById('messages');
+            const message = document.createElement('li');
+            message.textContent = event.data;
+            messages.appendChild(message);
+        };
+
+        // Function to send a message to the server
+        function sendMessage() {
+            const input = document.getElementById("messageInput");
+            ws.send(input.value);  // Send message to WebSocket server
+            input.value = '';       // Clear the input field
+        }
+
+        // Handle WebSocket connection errors
+        ws.onerror = function(error) {
+            console.error("WebSocket error observed:", error);
+        };
+
+        // Optional: Alert when WebSocket connection is closed
+        ws.onclose = function() {
+            alert("WebSocket connection closed");
+        };
+    </script>
+</body>
+</html>
