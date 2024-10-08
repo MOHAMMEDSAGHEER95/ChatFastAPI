@@ -4,6 +4,7 @@ from app.core.websocket import ConnectionManager
 router = APIRouter()
 manager = ConnectionManager()
 
+
 @router.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
