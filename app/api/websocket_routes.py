@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, status, Depends
 from pydantic import BaseModel
 from datetime import timedelta
@@ -30,7 +32,7 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
             await manager.broadcast(f"{data}", thread_id, True)
             openai_client = OpenAIClientHelper()
             openai_client.add_message(thread_id, data)
-            openai_client.run_thread(thread_id, 'asst_O2ZHsm0wPXbt21XCF5CExMsk')
+            openai_client.run_thread(thread_id, os.getenv('ASSISTANT_ID'))
             messages = openai_client.get_messages(thread_id)
             response = messages[0]
             generated_text = ''
@@ -54,7 +56,7 @@ async def send_message_to_thread(thread_id: str, body: MessageBody, user: str = 
         openai_client = OpenAIClientHelper()
         await manager.broadcast(f"{body.message}", thread_id, True)
         openai_client.add_message(thread_id, body.message)
-        openai_client.run_thread(thread_id, 'asst_O2ZHsm0wPXbt21XCF5CExMsk')
+        openai_client.run_thread(thread_id, os.getenv('ASSISTANT_ID'))
         messages = openai_client.get_messages(thread_id)
         response = messages[0]
         generated_text = ''
@@ -78,7 +80,7 @@ def create_thread(user: str = Depends(get_current_user)):
 
 
 @router.get("/threads/")
-def create_thread(user: str = Depends(get_current_user)):
+def get_thread(user: str = Depends(get_current_user)):
     """Endpoint to initialize a new conversation (thread)"""
     client = MongoClient(
         mongo_url
@@ -87,6 +89,14 @@ def create_thread(user: str = Depends(get_current_user)):
     threads_collection = db["threads"]
     ids = threads_collection.find({}, {"_id": 1})
     return {"thread_id": [str(document["_id"]) for document in ids]}
+
+
+@router.get("/assistants/")
+def get_assistants(user: str = Depends(get_current_user)):
+    client = OpenAIClientHelper()
+    assistants = client.get_assistants()
+    return {"assistants": assistants}
+
 
 
 @router.get("/threads/{thread_id}/messages/")
