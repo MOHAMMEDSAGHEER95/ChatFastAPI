@@ -4,6 +4,7 @@ from uuid import uuid4
 from pymongo import MongoClient
 from typing import List, Dict
 
+from app.core.config import mongo_url
 from app.openai.client import OpenAIClientHelper
 
 
@@ -11,7 +12,7 @@ class ChatManager:
     def __init__(self):
         # Connect to MongoDB Atlas
         self.client = MongoClient(
-            f"mongodb+srv://fastapiuser:gv5LBCrKFxPgq8K@cluster0.w73f6.mongodb.net/?retryWrites=true&w=majority"
+            mongo_url
         )
         self.db = self.client["chat_db"]  # The database name is "chat_db"
         self.threads_collection = self.db["threads"]  # The collection for threads

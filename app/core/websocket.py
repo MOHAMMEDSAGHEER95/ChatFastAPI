@@ -3,13 +3,16 @@ from fastapi import WebSocket, WebSocketDisconnect
 from pymongo import MongoClient
 import os
 
+from app.core.config import mongo_url
+
+
 class ConnectionManager:
     def __init__(self):
         # Dictionary to store active WebSocket connections per thread
         self.active_connections: Dict[str, List[WebSocket]] = {}
 
         # Connect to MongoDB (retrieve URI from environment variables)
-        mongodb_uri = f"mongodb+srv://fastapiuser:gv5LBCrKFxPgq8K@cluster0.w73f6.mongodb.net/?retryWrites=true&w=majority"
+        mongodb_uri = mongo_url
 
         self.client = MongoClient(mongodb_uri)
         self.db = self.client["chat_db"]  # The database name is "chat_db"
@@ -32,7 +35,7 @@ class ConnectionManager:
                 del self.active_connections[thread_id]
             print(f"WebSocket connection removed from thread {thread_id}. Total connections: {len(self.active_connections.get(thread_id, []))}")
 
-    async def broadcast(self, message: str, thread_id: str):
+    async def broadcast(self, message: str, thread_id: str, user: bool):
         """Broadcast a message to all WebSocket connections under the given thread and save it to MongoDB."""
         if thread_id in self.active_connections:
             connections_to_remove = []
@@ -48,13 +51,13 @@ class ConnectionManager:
                 self.disconnect(connection, thread_id)
 
             # Save the message to MongoDB
-            self.save_message_to_mongo(thread_id, message)
+            self.save_message_to_mongo(thread_id, message, user)
 
-    def save_message_to_mongo(self, thread_id: str, message: str):
+    def save_message_to_mongo(self, thread_id: str, message: str, user=True):
         """Save a message to the MongoDB collection for the given thread."""
         self.threads_collection.update_one(
             {"_id": thread_id},  # Find the thread by its ID
-            {"$push": {"messages": message}},  # Add the new message to the 'messages' array
+            {"$push": {"messages": {'message': message, "role_user": user}}},  # Add the new message to the 'messages' array
             upsert=True  # Create the thread document if it doesn't exist
         )
 

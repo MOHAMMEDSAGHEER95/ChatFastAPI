@@ -57,9 +57,9 @@ def verify_token(token: str, credentials_exception):
     return token_data
 
 
-
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
 def hash_password(password: str):
     """Hash the password."""
     return pwd_context.hash(password)

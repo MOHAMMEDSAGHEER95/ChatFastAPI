@@ -2,25 +2,16 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, st
 from pydantic import BaseModel
 from datetime import timedelta
 
+from pymongo import MongoClient
+
 from app.core.chat_manager import ChatManager
+from app.core.config import mongo_url
 from app.core.websocket import ConnectionManager
 from app.openai.client import OpenAIClientHelper
 from auth.jwt_handler import create_access_token, verify_password, hash_password, get_current_user
 
 router = APIRouter()
 manager = ConnectionManager()
-
-
-@router.websocket("/ws/chat")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await manager.broadcast(f"Client says: {data}")
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        await manager.broadcast("A client disconnected!")
 
 
 chat_manager = ChatManager()
@@ -36,9 +27,10 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
     try:
         while True:
             data = await websocket.receive_text()
+            await manager.broadcast(f"{data}", thread_id, True)
             openai_client = OpenAIClientHelper()
             openai_client.add_message(thread_id, data)
-            openai_client.run_thread(thread_id, 'asst_kI9YHA9g4ZGv5q1dGnJtNATM')
+            openai_client.run_thread(thread_id, 'asst_O2ZHsm0wPXbt21XCF5CExMsk')
             messages = openai_client.get_messages(thread_id)
             response = messages[0]
             generated_text = ''
@@ -47,10 +39,10 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
                     generated_text += content.text.value
                 except Exception as e:
                     pass
-            await manager.broadcast(f"{generated_text}", thread_id)
+            await manager.broadcast(f"{generated_text}", thread_id, False)
     except WebSocketDisconnect:
         manager.disconnect(websocket, thread_id)
-        await manager.broadcast(f"A client disconnected from {thread_id}", thread_id)
+        await manager.broadcast(f"A client disconnected from {thread_id}", thread_id, True)
 
 
 @router.post("/threads/{thread_id}/messages/")
@@ -60,8 +52,9 @@ async def send_message_to_thread(thread_id: str, body: MessageBody, user: str = 
         # Add the message to the thread
         # Broadcast the message via WebSocket
         openai_client = OpenAIClientHelper()
+        await manager.broadcast(f"{body.message}", thread_id, False)
         openai_client.add_message(thread_id, body.message)
-        openai_client.run_thread(thread_id, 'asst_kI9YHA9g4ZGv5q1dGnJtNATM')
+        openai_client.run_thread(thread_id, 'asst_O2ZHsm0wPXbt21XCF5CExMsk')
         messages = openai_client.get_messages(thread_id)
         response = messages[0]
         generated_text = ''
@@ -71,7 +64,7 @@ async def send_message_to_thread(thread_id: str, body: MessageBody, user: str = 
             except Exception as e:
                 pass
 
-        await manager.broadcast(f"{generated_text}", thread_id)
+        await manager.broadcast(f"{generated_text}", thread_id, False)
         return {"message": "Message sent successfully"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -82,6 +75,18 @@ def create_thread(user: str = Depends(get_current_user)):
     """Endpoint to initialize a new conversation (thread)"""
     thread_id = chat_manager.create_thread()
     return {"thread_id": thread_id}
+
+
+@router.get("/threads/")
+def create_thread(user: str = Depends(get_current_user)):
+    """Endpoint to initialize a new conversation (thread)"""
+    client = MongoClient(
+        mongo_url
+    )
+    db = client["chat_db"]  # The database name is "chat_db"
+    threads_collection = db["threads"]
+    ids = threads_collection.find({}, {"_id": 1})
+    return {"thread_id": [str(document["_id"]) for document in ids]}
 
 
 @router.get("/threads/{thread_id}/messages/")
