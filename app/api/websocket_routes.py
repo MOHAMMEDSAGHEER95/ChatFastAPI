@@ -33,7 +33,8 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
     try:
         while True:
             data = await websocket.receive_text()
-            await manager.broadcast(f"Client in {thread_id} says: {data}", thread_id)
+            chat_manager.add_message_to_thread(thread_id, data)
+            await manager.broadcast(f"{data}")
     except WebSocketDisconnect:
         manager.disconnect(websocket, thread_id)
         await manager.broadcast(f"A client disconnected from {thread_id}", thread_id)
