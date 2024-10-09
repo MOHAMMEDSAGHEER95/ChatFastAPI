@@ -6,6 +6,7 @@ from typing import Optional
 from fastapi import HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
+from passlib.context import CryptContext
 
 # Secret key to encode/decode the JWT token
 SECRET_KEY = os.getenv("SECRET_KEY")  # Should be secure and stored in environment variables
@@ -56,7 +57,7 @@ def verify_token(token: str, credentials_exception):
     return token_data
 
 
-from passlib.context import CryptContext
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def hash_password(password: str):
