@@ -3,30 +3,31 @@ from typing import List
 
 app = FastAPI()
 
-# This will hold all connected WebSocket clients
+
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        # Dictionary to store active connections per thread
+        self.active_connections: dict[str, List[WebSocket]] = {}
 
-    # Add a new client to the list of active connections
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket, thread_id: str):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        if thread_id not in self.active_connections:
+            self.active_connections[thread_id] = []
+        self.active_connections[thread_id].append(websocket)
 
-    # Remove a disconnected client from the list
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+    def disconnect(self, websocket: WebSocket, thread_id: str):
+        self.active_connections[thread_id].remove(websocket)
 
-    # Broadcast a message to all connected clients
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
+    async def broadcast(self, message: str, thread_id: str):
+        if thread_id in self.active_connections:
+            for connection in self.active_connections[thread_id]:
+                await connection.send_text(message)
 
-# Create an instance of ConnectionManager
+
 manager = ConnectionManager()
 
-# WebSocket endpoint
-@app.websocket("/ws/chat")
+
+@app.websocket("/ws/chat")  # WebSocket endpoint
 async def websocket_endpoint(websocket: WebSocket):
     # Connect the new client
     await manager.connect(websocket)
