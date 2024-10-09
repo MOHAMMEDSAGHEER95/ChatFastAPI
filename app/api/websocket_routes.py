@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from app.core.chat_manager import ChatManager
 from app.core.websocket import ConnectionManager
+from app.openai.client import OpenAIClientHelper
 from auth.jwt_handler import create_access_token, verify_password, hash_password, get_current_user
 
 router = APIRouter()
@@ -47,7 +48,19 @@ async def send_message_to_thread(thread_id: str, body: MessageBody, user: str = 
     try:
         # Add the message to the thread
         # Broadcast the message via WebSocket
-        await manager.broadcast(f"{body.message}", thread_id)
+        openai_client = OpenAIClientHelper()
+        openai_client.add_message(thread_id, body.message)
+        openai_client.run_thread(thread_id, 'asst_kI9YHA9g4ZGv5q1dGnJtNATM')
+        messages = openai_client.get_messages(thread_id)
+        response = messages[0]
+        generated_text = ''
+        for content in response.content:
+            try:
+                generated_text += content.text.value
+            except Exception as e:
+                pass
+
+        await manager.broadcast(f"{generated_text}", thread_id)
         return {"message": "Message sent successfully"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

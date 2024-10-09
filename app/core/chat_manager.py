@@ -4,27 +4,30 @@ from uuid import uuid4
 from pymongo import MongoClient
 from typing import List, Dict
 
+from app.openai.client import OpenAIClientHelper
+
 
 class ChatManager:
     def __init__(self):
         # Connect to MongoDB Atlas
         self.client = MongoClient(
-            f"mongodb+srv://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@cluster0.w73f6.mongodb.net/?retryWrites=true&w=majority"
+            f"mongodb+srv://fastapiuser:gv5LBCrKFxPgq8K@cluster0.w73f6.mongodb.net/?retryWrites=true&w=majority"
         )
         self.db = self.client["chat_db"]  # The database name is "chat_db"
         self.threads_collection = self.db["threads"]  # The collection for threads
 
     def create_thread(self) -> str:
         """Create a new thread and return its unique thread_id"""
-        thread_id = str(uuid4())  # Generate a unique ID for the thread
+        openai_client = OpenAIClientHelper()
+        thread = openai_client.create_thread()
 
         # Insert the new thread into MongoDB
         self.threads_collection.insert_one({
-            "_id": thread_id,
+            "_id": thread,
             "messages": []  # Initialize the thread with an empty message list
         })
 
-        return thread_id
+        return thread
 
     def get_messages(self, thread_id: str) -> List[str]:
         """Get all messages from a thread"""

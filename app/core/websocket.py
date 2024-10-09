@@ -9,7 +9,7 @@ class ConnectionManager:
         self.active_connections: Dict[str, List[WebSocket]] = {}
 
         # Connect to MongoDB (retrieve URI from environment variables)
-        mongodb_uri = f"mongodb+srv://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@cluster0.w73f6.mongodb.net/?retryWrites=true&w=majority"
+        mongodb_uri = f"mongodb+srv://fastapiuser:gv5LBCrKFxPgq8K@cluster0.w73f6.mongodb.net/?retryWrites=true&w=majority"
 
         self.client = MongoClient(mongodb_uri)
         self.db = self.client["chat_db"]  # The database name is "chat_db"
