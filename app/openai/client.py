@@ -10,8 +10,8 @@ class OpenAIClientHelper:
         self.client = OpenAI(api_key=os.getenv('OPEN_AI_KEY'))
 
     def get_assistants(self):
-        my_assistants = self.client.beta.assistants.list( order="desc", limit=20)
-        print(my_assistants)
+        my_assistants = self.client.beta.assistants.list(order="desc", limit=20)
+        return my_assistants
 
     def get_messages(self, thread_id: str):
         thread_messages = self.client.beta.threads.messages.list(thread_id)
