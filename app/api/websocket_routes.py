@@ -35,21 +35,19 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
     try:
         while True:
             data = await websocket.receive_text()
-            chat_manager.add_message_to_thread(thread_id, data)
-            await manager.broadcast(f"{data}")
+            await manager.broadcast(f"{data}", thread_id)
     except WebSocketDisconnect:
         manager.disconnect(websocket, thread_id)
         await manager.broadcast(f"A client disconnected from {thread_id}", thread_id)
 
 
 @router.post("/threads/{thread_id}/messages/")
-async def send_message_to_thread(thread_id: str, body: MessageBody):
+async def send_message_to_thread(thread_id: str, body: MessageBody, user: str = Depends(get_current_user)):
     """Endpoint to send a message to an existing thread"""
     try:
         # Add the message to the thread
-        chat_manager.add_message_to_thread(thread_id, body.message)
         # Broadcast the message via WebSocket
-        await manager.broadcast(f"Thread {thread_id}: {body.message}", thread_id)
+        await manager.broadcast(f"{body.message}", thread_id)
         return {"message": "Message sent successfully"}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

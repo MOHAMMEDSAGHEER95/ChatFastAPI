@@ -1,30 +1,37 @@
 # app/core/chat_manager.py
-
-from typing import List, Dict
+import os
 from uuid import uuid4
+from pymongo import MongoClient
+from typing import List, Dict
 
 
 class ChatManager:
     def __init__(self):
-        # Dictionary to store messages in each thread
-        self.threads: Dict[str, List[str]] = {}
+        # Connect to MongoDB Atlas
+        self.client = MongoClient(
+            f"mongodb+srv://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@cluster0.w73f6.mongodb.net/?retryWrites=true&w=majority"
+        )
+        self.db = self.client["chat_db"]  # The database name is "chat_db"
+        self.threads_collection = self.db["threads"]  # The collection for threads
 
     def create_thread(self) -> str:
         """Create a new thread and return its unique thread_id"""
         thread_id = str(uuid4())  # Generate a unique ID for the thread
-        self.threads[thread_id] = []  # Initialize the thread with an empty message list
-        return thread_id
 
-    def add_message_to_thread(self, thread_id: str, message: str):
-        """Add a message to an existing thread"""
-        if thread_id in self.threads:
-            self.threads[thread_id].append(message)
-        else:
-            raise ValueError(f"Thread {thread_id} does not exist")
+        # Insert the new thread into MongoDB
+        self.threads_collection.insert_one({
+            "_id": thread_id,
+            "messages": []  # Initialize the thread with an empty message list
+        })
+
+        return thread_id
 
     def get_messages(self, thread_id: str) -> List[str]:
         """Get all messages from a thread"""
-        if thread_id in self.threads:
-            return self.threads[thread_id]
+        # Find the thread in MongoDB by its ID
+        thread = self.threads_collection.find_one({"_id": thread_id})
+
+        if thread:
+            return thread["messages"]  # Return the list of messages
         else:
             raise ValueError(f"Thread {thread_id} does not exist")
