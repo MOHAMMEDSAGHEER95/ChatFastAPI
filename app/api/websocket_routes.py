@@ -36,7 +36,18 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
     try:
         while True:
             data = await websocket.receive_text()
-            await manager.broadcast(f"{data}", thread_id)
+            openai_client = OpenAIClientHelper()
+            openai_client.add_message(thread_id, data)
+            openai_client.run_thread(thread_id, 'asst_kI9YHA9g4ZGv5q1dGnJtNATM')
+            messages = openai_client.get_messages(thread_id)
+            response = messages[0]
+            generated_text = ''
+            for content in response.content:
+                try:
+                    generated_text += content.text.value
+                except Exception as e:
+                    pass
+            await manager.broadcast(f"{generated_text}", thread_id)
     except WebSocketDisconnect:
         manager.disconnect(websocket, thread_id)
         await manager.broadcast(f"A client disconnected from {thread_id}", thread_id)

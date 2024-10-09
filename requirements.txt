@@ -2,3 +2,5 @@ fastapi[standard]
 bcrypt
 pyjwt
 passlib
+pymongo[srv]
+openai

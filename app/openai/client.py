@@ -2,8 +2,10 @@ import os
 
 from openai import OpenAI
 
+
 class OpenAIClientHelper:
     client = None
+
     def __init__(self):
         self.client = OpenAI(api_key=os.getenv('OPEN_AI_KEY'))
 
