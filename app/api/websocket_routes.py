@@ -52,7 +52,7 @@ async def send_message_to_thread(thread_id: str, body: MessageBody, user: str = 
         # Add the message to the thread
         # Broadcast the message via WebSocket
         openai_client = OpenAIClientHelper()
-        await manager.broadcast(f"{body.message}", thread_id, False)
+        await manager.broadcast(f"{body.message}", thread_id, True)
         openai_client.add_message(thread_id, body.message)
         openai_client.run_thread(thread_id, 'asst_O2ZHsm0wPXbt21XCF5CExMsk')
         messages = openai_client.get_messages(thread_id)

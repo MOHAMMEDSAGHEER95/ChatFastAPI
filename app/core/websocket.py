@@ -1,3 +1,4 @@
+import json
 from typing import List, Dict
 from fastapi import WebSocket, WebSocketDisconnect
 from pymongo import MongoClient
@@ -41,7 +42,7 @@ class ConnectionManager:
             connections_to_remove = []
             for connection in self.active_connections[thread_id]:
                 try:
-                    await connection.send_text(message)
+                    await connection.send_text(json.dumps({"message": message, "is_user": user}))
                 except WebSocketDisconnect:
                     # If the connection fails, mark it for removal
                     connections_to_remove.append(connection)

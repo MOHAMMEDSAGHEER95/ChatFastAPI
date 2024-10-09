@@ -1,1 +1,3 @@
-mongo_url = "mongodb+srv://fastapiuser:gv5LBCrKFxPgq8K@cluster0.w73f6.mongodb.net/?retryWrites=true&w=majority"
+import os
+
+mongo_url = f"mongodb+srv://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@cluster0.w73f6.mongodb.net/?retryWrites=true&w=majority"
