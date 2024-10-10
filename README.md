@@ -1,4 +1,4 @@
-# FastAPI Project
+# 🚀 ChatApp - FastAPI + OpenAI Integration
 
 ## Overview
 
